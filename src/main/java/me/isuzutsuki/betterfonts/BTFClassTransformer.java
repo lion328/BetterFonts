@@ -11,7 +11,7 @@ public class BTFClassTransformer implements net.minecraft.launchwrapper.IClassTr
     @Override
     public byte[] transform(String obfName, String fullName, byte[] contents) {
         if (fullName.equals("net.minecraft.client.gui.FontRenderer")) {
-            BetterFontsCore.BETTER_FONTS_LOGGER.info("[BetterFonts] Transformer is about to patch : " + obfName);
+            BetterFontsCore.BETTER_FONTS_LOGGER.info("Transformer is about to patch : " + obfName);
             contents = patchClassInJar(fullName, contents, obfName, BetterFontsCore.location);
         }
         return contents;
