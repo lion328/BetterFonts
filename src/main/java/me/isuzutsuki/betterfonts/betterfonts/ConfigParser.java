@@ -1,16 +1,11 @@
 package me.isuzutsuki.betterfonts.betterfonts;
 
-import java.awt.Font;
-import java.awt.GraphicsEnvironment;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.Properties;
-
+import me.isuzutsuki.betterfonts.BetterFontsCore;
 import net.minecraft.client.Minecraft;
+
+import java.awt.*;
+import java.io.*;
+import java.util.Properties;
 
 /**
  * This class encapsulates all of the logic needed for loading and parsing a user configuration file. This file can override the
@@ -40,28 +35,28 @@ public class ConfigParser
 
         try
         {
-        	File cfg = new File(Minecraft.getMinecraft().mcDataDir.getPath() + fileName);
-        	if(!cfg.exists())
-        	{
-        		InputStream stream = ConfigParser.class.getResourceAsStream("/config/BetterFonts.cfg");
-        		OutputStream out;
-        	    if (stream == null) {
-        	    	System.out.println("[BetterFonts]NULL Stream");
-        	        System.out.println("BetterFonts failed to create new config file.");
-        	    }
-        	    int readBytes;
-        	    byte[] buffer = new byte[4096];
-        	    try {
-        	        out = new FileOutputStream(new File(Minecraft.getMinecraft().mcDataDir.getPath() + "/config/BetterFonts.cfg"));
-        	        while ((readBytes = stream.read(buffer)) > 0) {
-        	            out.write(buffer, 0, readBytes);
-        	        }
-        	    }catch(IOException e)
-        	    {
-        	    	System.out.println("[BetterFonts]IOException on creating config");
-        	    	System.out.println("BetterFonts failed to create new config file.");
-        	    }
-        	}
+            File cfg = new File(Minecraft.getMinecraft().mcDataDir.getPath() + fileName);
+            if(!cfg.exists())
+            {
+                InputStream stream = ConfigParser.class.getResourceAsStream("/config/BetterFonts.cfg");
+                OutputStream out;
+                if (stream == null) {
+                    BetterFontsCore.BETTER_FONTS_LOGGER.error("[BetterFonts] NULL Stream");
+                    BetterFontsCore.BETTER_FONTS_LOGGER.error("BetterFonts failed to create new config file.");
+                    return false;
+                }
+                int readBytes;
+                byte[] buffer = new byte[4096];
+                try {
+                    out = new FileOutputStream(new File(Minecraft.getMinecraft().mcDataDir.getPath() + "/config/BetterFonts.cfg"));
+                    while ((readBytes = stream.read(buffer)) > 0) {
+                        out.write(buffer, 0, readBytes);
+                    }
+                } catch(IOException e) {
+                    BetterFontsCore.BETTER_FONTS_LOGGER.error("[BetterFonts] IOException on creating config");
+                    BetterFontsCore.BETTER_FONTS_LOGGER.error("BetterFonts failed to create new config file.");
+                }
+            }
             FileInputStream cfgFile = new FileInputStream(cfg);
             cfgProps.load(cfgFile);
             cfgFile.close();
@@ -69,11 +64,11 @@ public class ConfigParser
         }
         catch(IOException e)
         {
-            System.out.println("BetterFonts " + e.getMessage());
+            BetterFontsCore.BETTER_FONTS_LOGGER.error(e);
         }
         catch(IllegalArgumentException e)
         {
-            System.out.println("BetterFonts " + e.getMessage());
+            BetterFontsCore.BETTER_FONTS_LOGGER.error(e);
         }
 
         return success;
@@ -109,11 +104,9 @@ public class ConfigParser
         String searchName = fontName.replaceAll("[- ]", "").toLowerCase();
 
         /* Java's logical font names are always allowed in the font.name property */
-        for(int i = 0; i < LOGICAL_FONTS.length; i++)
-        {
-            if(LOGICAL_FONTS[i].compareToIgnoreCase(searchName) == 0)
-            {
-                return LOGICAL_FONTS[i];
+        for (String LOGICAL_FONT : LOGICAL_FONTS) {
+            if (LOGICAL_FONT.compareToIgnoreCase(searchName) == 0) {
+                return LOGICAL_FONT;
             }
         }
 
@@ -124,13 +117,10 @@ public class ConfigParser
         String partialMatch = null;
 
         /* Search through all available fonts installed on the system */
-        for(int index = 0; index < allFonts.length; index++)
-        {
+        for (Font font : allFonts) {
             /* Always prefer an exact match on the font face name which terminates the search with a result */
-            Font font = allFonts[index];
             String name = font.getName().replaceAll("[- ]", "");
-            if(name.compareToIgnoreCase(searchName) == 0 || name.compareToIgnoreCase(altSearchName) == 0)
-            {
+            if (name.compareToIgnoreCase(searchName) == 0 || name.compareToIgnoreCase(altSearchName) == 0) {
                 return font.getName();
             }
 
@@ -140,10 +130,8 @@ public class ConfigParser
              * font. Always prefer to partial match the shortest possible font face name to match "Times New Roman" before
              * "Times New Roman Bold" for instance.
              */
-            if((name + font.getFamily()).replaceAll("[- ]", "").toLowerCase().indexOf(searchName) != -1)
-            {
-                if(partialMatch == null || partialMatch.length() > font.getName().length())
-                {
+            if ((name + font.getFamily()).replaceAll("[- ]", "").toLowerCase().indexOf(searchName) != -1) {
+                if (partialMatch == null || partialMatch.length() > font.getName().length()) {
                     partialMatch = font.getName();
                 }
             }

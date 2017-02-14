@@ -8,46 +8,42 @@ import java.util.zip.ZipFile;
 
 public class BTFClassTransformer implements net.minecraft.launchwrapper.IClassTransformer{
 
-	@Override
-	public byte[] transform(String arg0, String arg1, byte[] arg2) {
-		if (arg0.equals("bbu") || arg0.equals("net.minecraft.client.gui.FontRenderer")) {
-			System.out.println("[BetterFonts] Transformer is about to patch : " + arg0);
-			arg2 = patchClassInJar(arg0, arg2, arg0, BetterFontsCore.location);
-		}
-			return arg2;
+    @Override
+    public byte[] transform(String obfName, String fullName, byte[] contents) {
+        if (fullName.equals("net.minecraft.client.gui.FontRenderer")) {
+            BetterFontsCore.BETTER_FONTS_LOGGER.info("[BetterFonts] Transformer is about to patch : " + obfName);
+            contents = patchClassInJar(fullName, contents, obfName, BetterFontsCore.location);
+        }
+        return contents;
 
-	}
+    }
 
-	public byte[] patchClassInJar(String name, byte[] bytes, String ObfName, File location){
-		try {
-			//open the jar as zip
-			ZipFile zip = new ZipFile(location);			
-			ZipEntry entry = zip.getEntry(name.replace('.', '/') + ".class");
+    public byte[] patchClassInJar(String name, byte[] bytes, String ObfName, File location){
+        try {
+            ZipFile zip = new ZipFile(location);
+            ZipEntry entry = zip.getEntry(name.replace('.', '/') + ".class");
 
-
-			if (entry == null) {
-				System.out.println(name + " not found in " + location.getName());
-			} else {
-				//serialize the class file into the bytes array
-				InputStream zin = zip.getInputStream(entry);
-				int size = (int) entry.getSize();
-				byte[] newbytes = new byte[size];
-				int pos = 0;
-				while (pos < size) {
-					int len = zin.read(newbytes,pos,size-pos);
-					if (len == 0)
-						throw new IOException();
-					pos += len;
-				}
-				if(!newbytes.equals(bytes))bytes=newbytes;
-				zin.close();
-				System.out.println("[" + "BetterFonts" + "]: " + "Class " + name + " patched!");
-			}
-			zip.close();
-			} catch (Exception e) {
-				throw new RuntimeException("Error overriding " + name + " from " + location.getName(), e);
-			}
-			//return the new bytes
-			return bytes;
-	}
+            if (entry == null) {
+                BetterFontsCore.BETTER_FONTS_LOGGER.error(name + " not found in " + location.getName());
+            } else {
+                InputStream zin = zip.getInputStream(entry);
+                int size = (int) entry.getSize();
+                byte[] newBytes = new byte[size];
+                int pos = 0;
+                while (pos < size) {
+                    int len = zin.read(newBytes,pos,size-pos);
+                    if (len == 0)
+                        throw new IOException();
+                    pos += len;
+                }
+                if(!newBytes.equals(bytes))bytes=newBytes;
+                zin.close();
+                BetterFontsCore.BETTER_FONTS_LOGGER.info("Patched class " + name + " with BetterFont's !");
+            }
+            zip.close();
+        } catch (Exception e) {
+            throw new RuntimeException("Error overriding " + name + " from " + location.getName(), e);
+        }
+        return bytes;
+    }
 }

@@ -1,0 +1,116 @@
+--- build/tmp/recompileMc/sources/net/minecraft/client/gui/FontRenderer.java	2017-02-14 21:26:57.450677742 +0700
++++ src/main/java/net/minecraft/client/gui/FontRenderer.java	2017-02-14 21:49:05.641087624 +0700
+@@ -10,6 +10,10 @@
+ import java.util.List;
+ import java.util.Locale;
+ import java.util.Random;
++
++
++import me.isuzutsuki.betterfonts.betterfonts.*;
++import me.isuzutsuki.betterfonts.BetterFontsCore;
+ import net.minecraft.client.Minecraft;
+ import net.minecraft.client.renderer.GlStateManager;
+ import net.minecraft.client.renderer.Tessellator;
+@@ -29,6 +33,11 @@
+ @SideOnly(Side.CLIENT)
+ public class FontRenderer implements IResourceManagerReloadListener
+ {
++    public static boolean betterFontsEnabled = true;
++    public StringCache stringCache;
++    public boolean dropShadowEnabled = true;
++    public boolean enabled = true;
++
+     private static final ResourceLocation[] UNICODE_PAGE_LOCATIONS = new ResourceLocation[256];
+     /** Array of width of all the characters in default.png */
+     protected final int[] charWidth = new int[256];
+@@ -113,6 +122,28 @@
+             this.colorCode[i] = (k & 255) << 16 | (l & 255) << 8 | i1 & 255;
+         }
+ 
++        //BetterFonts start
++        BetterFontsCore.BETTER_FONTS_LOGGER.info("[BetterFonts]Starting BetterFonts...");
++        if(location.getResourcePath().equalsIgnoreCase("textures/font/ascii.png") && this.stringCache == null)
++        {
++            /* Read optional config file to override the default font name/size */
++            ConfigParser config = new ConfigParser();
++            int fontSize = 18;
++            boolean antiAlias = false;
++            String fontName = "SansSerif";
++            if(config.loadConfig("/config/BetterFonts.cfg"))
++            {
++                fontName = config.getFontName("SansSerif");
++                fontSize = config.getFontSize(18);
++                antiAlias = config.getBoolean("font.antialias", false);
++                dropShadowEnabled = config.getBoolean("font.dropshadow", true);
++                BetterFontsCore.BETTER_FONTS_LOGGER.info("BetterFonts configuration loaded");
++            }
++            this.stringCache = new StringCache(this.colorCode);
++            this.stringCache.setDefaultFont(fontName, fontSize, antiAlias);
++        }
++        //BetterFonts end
++
+         this.readGlyphSizes();
+     }
+ 
+@@ -328,7 +359,7 @@
+         this.resetStyles();
+         int i;
+ 
+-        if (dropShadow)
++        if (dropShadow && this.dropShadowEnabled)
+         {
+             i = this.renderString(text, x + 1.0F, y + 1.0F, color, true);
+             i = Math.max(i, this.renderString(text, x, y, color, false));
+@@ -346,6 +377,9 @@
+      */
+     private String bidiReorder(String text)
+     {
++        if(this.betterFontsEnabled && this.stringCache != null) {
++            return text;
++        }
+         try
+         {
+             Bidi bidi = new Bidi((new ArabicShaping(8)).shape(text), 127);
+@@ -589,7 +623,11 @@
+             setColor(this.red, this.blue, this.green, this.alpha);
+             this.posX = x;
+             this.posY = y;
+-            this.renderStringAtPos(text, dropShadow);
++            if(this.betterFontsEnabled && this.stringCache != null) {
++                this.posX += this.stringCache.renderString(text, x, y, color, dropShadow);
++            } else {
++                this.renderStringAtPos(text, dropShadow);
++            }
+             return (int)this.posX;
+         }
+     }
+@@ -599,6 +637,9 @@
+      */
+     public int getStringWidth(String text)
+     {
++        if(this.betterFontsEnabled && this.stringCache != null){
++            return this.stringCache.getStringWidth(text);
++        }
+         if (text == null)
+         {
+             return 0;
+@@ -728,6 +769,9 @@
+      */
+     public String trimStringToWidth(String text, int width, boolean reverse)
+     {
++        if(this.betterFontsEnabled && this.stringCache != null) {
++            return this.stringCache.trimStringToWidth(text, width, reverse);
++        }
+         StringBuilder stringbuilder = new StringBuilder();
+         int i = 0;
+         int j = reverse ? text.length() - 1 : 0;
+@@ -890,6 +934,9 @@
+      */
+     private int sizeStringToWidth(String str, int wrapWidth)
+     {
++        if(this.betterFontsEnabled && this.stringCache != null) {
++            return this.stringCache.sizeStringToWidth(str, wrapWidth);
++        }
+         int i = str.length();
+         int j = 0;
+         int k = 0;

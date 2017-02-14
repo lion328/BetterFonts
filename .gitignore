@@ -20,3 +20,6 @@ build
 # other
 eclipse
 run
+
+# betterfonts
+src/main/java/net/minecraft/client/gui/FontRenderer.java
